@@ -1,0 +1,66 @@
+/**
+ * Project      : Cashboi POS (Offline + Online Sync)
+ * Description  : This application allows users to make sales offline
+ *                using local storage / indexedDB. When internet
+ *                becomes available again, all pending invoices,
+ *                customers, and inventory updates get synced automatically
+ *                to the main online server.
+ *
+ * Key Features :
+ *   ✔ Offline POS Sale Processing
+ *   ✔ Auto Sync When Online
+ *   ✔ Customer & Product Cache
+ *   ✔ Background Queue System
+ *   ✔ Fallback UI for No-Internet Scenarios
+ *
+ * Technology   : HTML, CSS, JavaScript, IndexedDB / LocalStorage,
+ *                REST API, CodeIgniter backend
+ *
+ * Author       : Ali Azgor Hridoy
+ * GitHub       : https://github.com/sumuhridoy2002
+ * Repository   : https://github.com/sumuhridoy2002/cashboi_pos_offline_online_sync
+ * Version      : 1.0.0
+ * License      : MIT
+ *
+ * Note         : Please keep author credits and GitHub link
+ *                if you reuse or redistribute this source code.
+ */
+ 
+#syncOverlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10001;
+    color: white;
+    text-align: center;
+    padding-top: 200px;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #printArea,
+    #printArea * {
+        visibility: visible;
+    }
+
+    #printArea {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 80mm;
+        font-size: 12px;
+    }
+}
+
+#printArea {
+    display: none;
+    font-family: 'Arial', sans-serif;
+}
