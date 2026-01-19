@@ -86,7 +86,7 @@ $(document).ready(function () {
         } catch (e) { alert("Download failed."); $('#syncOverlay').hide(); }
     })
 
-    // --- Render Data ---
+    // --- Render Data from indexedDB ---
     async function renderSelectsFromDB() {
         const tx = db.transaction(["customers", "products", "accounts"], "readonly")
 
@@ -112,7 +112,7 @@ $(document).ready(function () {
     }
     $('#accountType').on('change', updateAccountUI)
 
-    // --- POS Logic (Fixed TypeError) ---
+    // --- POS Logic ---
     $(document).on('change', '#productID', function () {
         const pid = $(this).val()
         if (!pid) return
@@ -120,7 +120,7 @@ $(document).ready(function () {
         const tx = db.transaction("products", "readonly")
         tx.objectStore("products").get(parseInt(pid)).onsuccess = e => {
             const p = e.target.result
-            if (!p) return // Prevent "Cannot read properties of undefined"
+            if (!p) return
 
             if ($(`#qty_${p.productID}`).length) return
 
@@ -152,7 +152,7 @@ $(document).ready(function () {
     }
     $('.calc-trigger').on('keyup change', calculateTotal)
 
-    // --- Save & Print (Fixed Version) ---
+    // --- Save & Print ---
     $('#posForm').submit(function (e) {
         e.preventDefault()
         let products = [], printRows = ""
@@ -185,29 +185,24 @@ $(document).ready(function () {
             products: products
         }
 
-        // প্রিন্ট ডাটা সেট করা
+        // Set Data for Print
         $('#pDate').text(new Date().toLocaleString())
         $('#pCustomer').text($("#customerID option:selected").text())
         $('#pItems').html(printRows)
         $('#pTotals').html(`Total: ${$('#nAmount').val()}<br>Paid: ${$('#totalprice').val()}<br>Due: ${$('#dAmount').val()}`)
 
-        // ডাটাবেসে সেভ করা
+        // Save Data into indexedDB
         const transaction = db.transaction("sales", "readwrite")
         transaction.objectStore("sales").add(saleData)
 
         transaction.oncomplete = () => {
-            // প্রিন্ট কমান্ড কল করা
             window.print()
-
-            // প্রিন্ট ডায়ালগ ক্লোজ হওয়ার পর রিলোড করার ট্রিক
-            // কিছু ব্রাউজারে window.print() ব্লকিং হিসেবে কাজ করে, কিছুতে করে না।
-            // তাই onafterprint ব্যবহার করা সবচেয়ে সেফ।
 
             window.onafterprint = function () {
                 location.reload()
             }
 
-            // ব্যাকআপ হিসেবে: যদি onafterprint কাজ না করে তবে ২ সেকেন্ড পর রিলোড হবে
+            // As backup: if onafterprint does not work then it will reload after 2s
             setTimeout(function () {
                 location.reload()
             }, 2000)

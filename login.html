@@ -17,52 +17,48 @@
 </head>
 <body>
 
-<div id="loginBox">
-    <h2>Cashboi POS Login</h2>
-    <input type="email" id="login_email" placeholder="Email" required>
-    <input type="password" id="login_password" placeholder="Password" required>
-    <button id="loginBtn">Login</button>
-    <p id="errorMsg"></p>
-</div>
+    <div id="loginBox">
+        <h2>Cashboi POS Login</h2>
+        <input type="email" id="login_email" placeholder="Email" required>
+        <input type="password" id="login_password" placeholder="Password" required>
+        <button id="loginBtn">Login</button>
+        <p id="errorMsg"></p>
+    </div>
 
-<script>
-$(document).ready(function() {
-    // Check if already logged in
-    const user = localStorage.getItem("cashboi_user");
-    const token = localStorage.getItem("cashboi_token");
-    if(user && token) {
-        window.location.href = "index.html"; // redirect to main POS page
-    }
+    <script>
+        $(document).ready(function() {
+            const user = localStorage.getItem("cashboi_user")
+            const token = localStorage.getItem("cashboi_token")
+            
+            if(user && token) window.location.href = "index.html"
 
-    $('#loginBtn').click(function() {
-        const email = $('#login_email').val().trim();
-        const password = $('#login_password').val().trim();
+            $('#loginBtn').click(function() {
+                const email = $('#login_email').val().trim()
+                const password = $('#login_password').val().trim()
 
-        if(!email || !password){
-            $('#errorMsg').text("Email and Password required").show();
-            return;
-        }
-
-        $.ajax({
-            url: "https://www.cashboi.com.bd/api/Auth/login",
-            method: "POST",
-            data: { email, password, offline_browser: "offline_browser" },
-            success: function(res) {
-                if(res.token && res.token.length > 10) {
-                    localStorage.setItem("cashboi_user", JSON.stringify(res.data));
-                    localStorage.setItem("cashboi_token", res.token);
-                    window.location.href = "index.html";
-                } else {
-                    $('#errorMsg').text(res.message || "Login failed").show();
+                if(!email || !password){
+                    $('#errorMsg').text("Email and Password required").show()
+                    return
                 }
-            },
-            error: function() {
-                $('#errorMsg').text("Server error, try again").show();
-            }
-        });
-    });
-});
-</script>
+
+                $.ajax({
+                    url: "https://www.cashboi.com.bd/api/Auth/login",
+                    method: "POST",
+                    data: { email, password, offline_browser: "offline_browser" },
+                    success: function(res) {
+                        if(res.token && res.token.length > 10) {
+                            localStorage.setItem("cashboi_user", JSON.stringify(res.data))
+                            localStorage.setItem("cashboi_token", res.token)
+                            window.location.href = "index.html"
+                        } else $('#errorMsg').text(res.message || "Login failed").show()
+                    },
+                    error: function() {
+                        $('#errorMsg').text("Server error, try again").show()
+                    }
+                })
+            })
+        })
+    </script>
 
 </body>
 </html>
