@@ -80,3 +80,7 @@
 #date {
     height: 32px;
 }
+
+#dataTable > thead {
+    background: aliceblue;
+}

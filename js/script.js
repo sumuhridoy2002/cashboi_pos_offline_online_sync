@@ -242,8 +242,7 @@ $(document).ready(function () {
                 <th>ID</th>
                 <th>Name</th>
                 <th>Mobile</th>
-                <th>Email</th>
-                <th>Status</th>
+                <th>Address</th>
             </tr>
         `)
 
@@ -254,11 +253,10 @@ $(document).ready(function () {
             e.target.result.forEach(c => {
                 tbody.append(`
                     <tr>
-                        <td>${c.customerID}</td>
+                        <td>${c.cus_id}</td>
                         <td>${c.customerName}</td>
                         <td>${c.mobile}</td>
-                        <td>${c.email ?? ''}</td>
-                        <td>${c.status}</td>
+                        <td>${c.address}</td>
                     </tr>
                 `)
             })
