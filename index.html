@@ -62,15 +62,42 @@
     </div>
 
     <div id="app" class="container-fluid mt-3" style="display:none;">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <button id="downloadMasterData" class="btn btn-info btn-block shadow-sm">
-                    <i class="fa fa-download"></i> UPDATE ALL DATA (ONLINE)
+        <div class="row mb-3 g-2">
+            <div class="col">
+                <button id="downloadMasterData" class="btn btn-info w-100 shadow-sm">
+                    <i class="fa fa-download fa-lg"></i>
+                    UPDATE DATA (ONLINE)
                 </button>
             </div>
-            <div class="col-md-6">
-                <button id="syncSalesBtn" class="btn btn-warning btn-block shadow-sm" style="display:none;">
-                    <i class="fa fa-sync"></i> SYNC <span id="pendingCount">0</span> SALES
+
+            <div class="col">
+                <button id="stockBtn" class="btn btn-info w-100 shadow-sm">
+                    <i class="fa fa-box"></i> Stock
+                </button>
+            </div>
+
+            <div class="col">
+                <button id="customerBtn" class="btn btn-info w-100 shadow-sm">
+                    <i class="fa fa-users"></i> Customer
+                </button>
+            </div>
+
+            <div class="col">
+                <button id="salesBtn" class="btn btn-info w-100 shadow-sm" disabled>
+                    <i class="fa fa-shopping-cart"></i> Sales
+                </button>
+            </div>
+
+            <div class="col">
+                <button id="expenseBtn" class="btn btn-info w-100 shadow-sm" disabled>
+                    <i class="fa fa-wallet"></i> Expense
+                </button>
+            </div>
+
+            <div class="col">
+                <button id="syncSalesBtn" class="btn btn-warning w-100 shadow-sm" style="display:none;">
+                    <i class="fa fa-sync"></i>
+                    Synchronize <span id="pendingCount">0</span> Sales
                 </button>
             </div>
         </div>
@@ -79,13 +106,17 @@
             <div class="card-body">
                 <form id="posForm">
                     <div class="row">
-                        <div class="form-group col-md-6">
-                            <label>CUSTOMER *</label>
-                            <select id="customerID" class="form-control select2" required></select>
+                        <div class="form-group col-md-4">
+                            <label for="date">DATE*</label>
+                            <input type="date" id="date" class="form-control" disabled> <!-- required -->
                         </div>
-                        <div class="form-group col-md-6">
-                            <label>PRODUCTS *</label>
-                            <select id="productID" class="form-control select2"></select>
+                        <div class="form-group col-md-4">
+                            <label for="customerID">CUSTOMER *</label>
+                            <select id="customerID" class="form-control select2" style="width: 100% !important;" required></select>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="productID">PRODUCTS *</label>
+                            <select id="productID" class="form-control select2" style="width: 100% !important;"></select>
                         </div>
                     </div>
 
@@ -117,6 +148,29 @@
                     </div>
                     <button type="submit" class="btn btn-success btn-block btn-lg mt-4">৳ PAY & PRINT</button>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer / Stock table using Modal -->
+    <div class="modal fade" id="dataModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-custom" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dataModalTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal">
+                <span>&times;</span>
+                </button>
+            </div>
+
+            <div class="modal-body p-2">
+                <div class="table-responsive" style="height: calc(100vh - 120px); overflow:auto;">
+                <table class="table table-bordered table-sm" id="dataTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+                </div>
+            </div>
             </div>
         </div>
     </div>

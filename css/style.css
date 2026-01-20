@@ -64,3 +64,19 @@
     display: none;
     font-family: 'Arial', sans-serif;
 }
+
+.modal-fullscreen-custom {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    max-width: 100%;
+}
+
+.modal-fullscreen-custom .modal-content {
+    height: 100vh;
+    border-radius: 0;
+}
+
+#date {
+    height: 32px;
+}

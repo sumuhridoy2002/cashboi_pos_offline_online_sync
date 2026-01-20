@@ -233,4 +233,70 @@ $(document).ready(function () {
             if (e.target.result > 0) { $('#pendingCount').text(e.target.result); $('#syncSalesBtn').show(); } else { $('#syncSalesBtn').hide(); }
         }
     }
+
+    // --- Customers ---
+    $('#customerBtn').click(function () {
+        $('#dataModalTitle').text('Customers')
+        $('#dataTable thead').html(`
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Email</th>
+                <th>Status</th>
+            </tr>
+        `)
+
+        const tbody = $('#dataTable tbody').empty()
+
+        const tx = db.transaction("customers", "readonly")
+        tx.objectStore("customers").getAll().onsuccess = e => {
+            e.target.result.forEach(c => {
+                tbody.append(`
+                    <tr>
+                        <td>${c.customerID}</td>
+                        <td>${c.customerName}</td>
+                        <td>${c.mobile}</td>
+                        <td>${c.email ?? ''}</td>
+                        <td>${c.status}</td>
+                    </tr>
+                `)
+            })
+        }
+
+        $('#dataModal').modal('show')
+    })
+
+    // --- Products/Stock ---
+    $('#stockBtn').click(function () {
+        $('#dataModalTitle').text('Stock / Products')
+        $('#dataTable thead').html(`
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Stock</th>
+                <th>Price</th>
+            </tr>
+        `)
+
+        const tbody = $('#dataTable tbody').empty()
+
+        const tx = db.transaction("products", "readonly")
+        tx.objectStore("products").getAll().onsuccess = e => {
+            e.target.result.forEach(p => {
+                tbody.append(`
+                    <tr>
+                        <td>${p.productcode}</td>
+                        <td>${p.productName}</td>
+                        <td>${p.categoryName}</td>
+                        <td><span class="badge bg-info">${p.stock_quantity}</span></td>
+                        <td>${p.sprice ? Number(p.sprice).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'} BDT</td>
+                    </tr>
+                `)
+            })
+        }
+
+        $('#dataModal').modal('show')
+    })
 })
