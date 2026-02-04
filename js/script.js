@@ -34,15 +34,17 @@ $(document).ready(function () {
     }
 
     $(".select2").select2()
+
     const token = localStorage.getItem("cashboi_token")
     const user = localStorage.getItem("cashboi_user")
     let db
 
     // --- Database Setup ---
-    const request = indexedDB.open("CashboiOfflineDB", 2)
+    const request = indexedDB.open("CashboiOfflineDB", 3)
     request.onupgradeneeded = e => {
         let dbObj = e.target.result
         if (!dbObj.objectStoreNames.contains("sales")) dbObj.createObjectStore("sales", { keyPath: "id", autoIncrement: true })
+        if (!dbObj.objectStoreNames.contains("online_sales")) dbObj.createObjectStore("online_sales", { keyPath: "saleID" })
         if (!dbObj.objectStoreNames.contains("customers")) dbObj.createObjectStore("customers", { keyPath: "customerID" })
         if (!dbObj.objectStoreNames.contains("products")) dbObj.createObjectStore("products", { keyPath: "productID" })
         if (!dbObj.objectStoreNames.contains("accounts")) dbObj.createObjectStore("accounts", { keyPath: "uid", autoIncrement: true })
@@ -59,21 +61,24 @@ $(document).ready(function () {
         $('#syncOverlay').show()
         $('#syncText').text("Downloading Master Data...")
         try {
-            const [cust, prod, cash, bank, mob] = await Promise.all([
-                fetch("https://www.cashboi.com.bd/api/Customer/customers", { headers: { "Authorization": "Bearer " + token } }).then(r => r.json()),
-                fetch("https://www.cashboi.com.bd/api/Product/products", { headers: { "Authorization": "Bearer " + token } }).then(r => r.json()),
-                fetch("https://www.cashboi.com.bd/api/CashAccount/cashaccount", { headers: { "Authorization": "Bearer " + token } }).then(r => r.json()),
-                fetch("https://www.cashboi.com.bd/api/BankAccount/bankaccount", { headers: { "Authorization": "Bearer " + token } }).then(r => r.json()),
-                fetch("https://www.cashboi.com.bd/api/MobileAccount/mobileaccount", { headers: { "Authorization": "Bearer " + token } }).then(r => r.json())
+            const [cust, prod, cash, bank, mob, sales] = await Promise.all([
+                fetch("https://www.cashboi.com.bd/api/Customer/customers", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+                fetch("https://www.cashboi.com.bd/api/Product/products", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+                fetch("https://www.cashboi.com.bd/api/CashAccount/cashaccount", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+                fetch("https://www.cashboi.com.bd/api/BankAccount/bankaccount", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+                fetch("https://www.cashboi.com.bd/api/MobileAccount/mobileaccount", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+                fetch("https://www.cashboi.com.bd/api/Sale/sales", { headers: { Authorization: "Bearer " + token } }).then(r => r.json())
             ])
 
-            const tx = db.transaction(["customers", "products", "accounts"], "readwrite")
+            const tx = db.transaction(["customers", "products", "accounts", "online_sales"], "readwrite")
             tx.objectStore("customers").clear()
             tx.objectStore("products").clear()
             tx.objectStore("accounts").clear()
+            tx.objectStore("online_sales").clear()
 
             cust.data.forEach(c => { c.customerID = parseInt(c.customerID); tx.objectStore("customers").add(c); })
             prod.data.forEach(p => { p.productID = parseInt(p.productID); tx.objectStore("products").add(p); })
+            sales.data.forEach(s => { s.saleID = parseInt(s.saleID); tx.objectStore("online_sales").add(s); })
 
             cash.data.forEach(a => tx.objectStore("accounts").add({ ...a, type: 'Cash', label: a.cashName, id: a.ca_id }))
             bank.data.forEach(a => tx.objectStore("accounts").add({ ...a, type: 'Bank', label: `${a.bankName} ${a.branchName} ${a.accountName}`, id: a.ba_id }))
@@ -125,7 +130,7 @@ $(document).ready(function () {
             if ($(`#qty_${p.productID}`).length) return
 
             $('#tbody').append(`<tr>
-                        <td>${p.productName} <input type="hidden" name="pname" value="${p.productName}"><input type="hidden" name="pid" value="${p.productID}"></td>
+                        <td class="first_td">${p.productName} <input type="hidden" name="pname" value="${p.productName}"><input type="hidden" name="pid" value="${p.productID}"></td>
                         <td><span class="badge badge-info">${p.stock_quantity || 0}</span></td>
                         <td><input type="number" class="form-control" onkeyup="updateRow(${p.productID})" id="qty_${p.productID}" value="1"></td>
                         <td><input type="number" class="form-control" onkeyup="updateRow(${p.productID})" id="rate_${p.productID}" value="${p.sprice}"></td>
@@ -236,8 +241,33 @@ $(document).ready(function () {
 
     // --- Customers ---
     $('#customerBtn').click(function () {
+
         $('#dataModalTitle').text('Customers')
+
         $('#dataTable thead').html(`
+            <tr>
+                <th colspan="4">
+                    <form id="addCustomerForm" class="p-2 bg-light border rounded mb-2">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <input class="form-control" id="custName" placeholder="Customer Name *" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input class="form-control" id="custMobile" placeholder="Mobile *" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input class="form-control" id="custEmail" placeholder="Email">
+                            </div>
+                            <div class="col-md-3">
+                                <input class="form-control" id="custAddress" placeholder="Address">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-success w-100">Add Customer</button>
+                            </div>
+                        </div>
+                    </form>
+                </th>
+            </tr>
             <tr>
                 <th>ID</th>
                 <th>Name</th>
@@ -248,21 +278,160 @@ $(document).ready(function () {
 
         const tbody = $('#dataTable tbody').empty()
 
+        // load from indexedDB
         const tx = db.transaction("customers", "readonly")
         tx.objectStore("customers").getAll().onsuccess = e => {
             e.target.result.forEach(c => {
                 tbody.append(`
                     <tr>
-                        <td>${c.cus_id}</td>
+                        <td>${c.customerID}</td>
                         <td>${c.customerName}</td>
                         <td>${c.mobile}</td>
-                        <td>${c.address}</td>
+                        <td>${c.address || ''}</td>
                     </tr>
                 `)
             })
         }
 
         $('#dataModal').modal('show')
+    })
+
+    $(document).on('submit', '#addCustomerForm', async function (e) {
+        e.preventDefault()
+
+        if (!navigator.onLine) {
+            Swal.fire({
+                icon: "warning",
+                title: "Offline Mode",
+                text: "You are offline. Please connect to internet to add customer.",
+                confirmButtonText: "OK"
+            })
+            return
+        }
+
+        if (!user) {
+            Swal.fire("Error", "User not found. Please login again.", "error")
+            return
+        }
+
+        const payload = {
+            custName: $('#custName').val(),
+            custCompany: $('#custCompany').val() || "",
+            custMobile: $('#custMobile').val(),
+            custEmail: $('#custEmail').val() || "",
+            custAddress: $('#custAddress').val() || "",
+            opbalance: "0",
+            compid: JSON.parse(user).compid,
+            regby: JSON.parse(user).uid,
+            compname: JSON.parse(user).compname
+        }
+
+        try {
+            $('#syncOverlay').show()
+            $('#syncText').text("Saving Customer...")
+
+            const res = await fetch("https://cashboi.com.bd/api/Customer/save_customer", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify(payload)
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) throw new Error(data.message || "Save failed")
+
+            // 👉 Save into IndexedDB (offline cache)
+            const tx = db.transaction("customers", "readwrite")
+            tx.objectStore("customers").add({
+                customerID: parseInt(data.data.customerID || Date.now()),
+                customerName: payload.custName,
+                mobile: payload.custMobile,
+                address: payload.custAddress
+            })
+
+            tx.oncomplete = () => {
+                $('#syncOverlay').hide()
+                Swal.fire("Success", "Customer Added!", "success")
+
+                $('#addCustomerForm')[0].reset()
+                renderSelectsFromDB()
+                $('#customerID').val(data.data.customerID).trigger('change')
+                $('#customerBtn').click()
+            }
+
+        } catch (err) {
+            $('#syncOverlay').hide()
+            Swal.fire("Error", err.message || "Customer save failed", "error")
+        }
+    })
+
+    // --- Sales ---
+    $('#salesBtn').click(function () {
+
+        $('#dataModalTitle').text('Sales List')
+
+        $('#dataTable thead').html(`
+            <tr>
+                <th>Invoice</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Paid</th>
+                <th>Due</th>
+                <th>Status</th>
+            </tr>
+        `)
+
+        const tbody = $('#dataTable tbody').empty()
+
+        $('#syncOverlay').show()
+
+        const tx = db.transaction(["online_sales", "sales"], "readonly")
+
+        const onlineReq = tx.objectStore("online_sales").getAll()
+        const offlineReq = tx.objectStore("sales").getAll()
+
+        Promise.all([
+            new Promise(r => onlineReq.onsuccess = e => r(e.target.result)),
+            new Promise(r => offlineReq.onsuccess = e => r(e.target.result))
+        ]).then(([online, offline]) => {
+
+            // Online rows
+            online.forEach(s => {
+                tbody.append(`
+                    <tr>
+                        <td>${s.invoice_no}</td>
+                        <td>${s.saleDate}</td>
+                        <td>${s.customerName}</td>
+                        <td>${Number(s.totalAmount).toLocaleString()}</td>
+                        <td>${Number(s.pAmount).toLocaleString()}</td>
+                        <td class="text-danger">${Number(s.dueamount).toLocaleString()}</td>
+                        <td><span class="badge bg-success">Online</span></td>
+                    </tr>
+                `)
+            })
+
+            // Offline rows
+            offline.forEach(s => {
+                tbody.append(`
+                    <tr class="table-warning">
+                        <td>Pending</td>
+                        <td>${s.sale.saDate}</td>
+                        <td>-</td>
+                        <td>${s.sale.tAmount}</td>
+                        <td>${s.sale.pAmount}</td>
+                        <td>${s.sale.dAmount}</td>
+                        <td><span class="badge bg-danger">Offline</span></td>
+                    </tr>
+                `)
+            })
+
+            $('#syncOverlay').hide()
+            $('#dataModal').modal('show')
+        })
     })
 
     // --- Products/Stock ---
@@ -297,4 +466,25 @@ $(document).ready(function () {
 
         $('#dataModal').modal('show')
     })
+
+    if(user) document.getElementById("storeName").innerText = JSON.parse(user).compname
+    
+    function updateDateTime(){
+        const now = new Date()
+        const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+        const dayName = days[now.getDay()]
+        const inputDate = now.toLocaleDateString('en-CA')
+        const displayDate = now.toLocaleDateString('en-GB')
+        const time = now.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+
+        $('#date').val(inputDate)
+        document.getElementById("dayName").innerText = dayName
+        document.getElementById("dateTime").innerText = `${displayDate} | ${time}`
+    }
+
+    setInterval(updateDateTime, 1000)
+    updateDateTime()
 })
